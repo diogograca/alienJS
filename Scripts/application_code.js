@@ -22,7 +22,6 @@ function playMusic() {
 // Create the canvas
 var canvasElement = $("#canvas");
 var ctx = canvas.getContext("2d");
-var ctx2 = canvas.getContext("2d");
 var canvas_width = canvasElement.width;
 var canvas_height = canvasElement.height;
 
@@ -30,6 +29,23 @@ var canvas_height = canvasElement.height;
 var spaceship = {
     speed: 300 // movement in pixels per second
 };
+var numberOfAliens = 3;
+var aliens = [];
+
+function populateAliens() {
+    //loop though each alien and add to loop
+    for (i = 0; i < numberOfAliens; i++) {
+
+        var alienObject = {
+            speed: level,
+            x: 24 + (Math.random() * (canvas.width - 48)),
+            y: -35
+        };
+        //add alien to array
+        aliens.push(alienObject);
+    }
+    console.log(aliens);
+}
 
 //assigns a level variable, value is got from the select level menu
 var level = $("#level").val();
@@ -94,18 +110,12 @@ addEventListener("keyup", function (e) {
     delete keysDown[e.keyCode];
 }, false);
 
-// Another alien spams when the player catches alien 1
-var reset = function () {
+var maxSpawDistance = 500;
+// Alien spams at the top when the player catches the alien
+var resetAlienPosition = function (i) {
     // Throw the monster somewhere on the screen randomly
-    alien1.x = 24 + (Math.random() * (canvas.width - 48));
-    alien1.y = -35;
-};
-
-// Another alien spams when the player catches alien 2
-var reset2 = function () {
-    // Throw the monster somewhere on the screen randomly
-    alien2.x = 24 + (Math.random() * (canvas.width - 48));
-    alien2.y = -35;
+    aliens[i].x = 24 + (Math.random() * (canvas.width - 48));
+    aliens[i].y = -35;
 };
 
 // Update game objects
@@ -132,104 +142,89 @@ var update = function (modifier) {
     }
     //Animates the alliens if the game started
     if (started) {
-        alien1.y += alien1.speed * modifier;
-        alien2.y += alien2.speed * modifier;
+        for (i = 0; i < numberOfAliens; i++) {
+            aliens[i].y += aliens[i].speed * modifier;
+        }
     };
 
-    //Detects if the alien is touching the spaceship
-    if (
-        spaceship.x <= (alien1.x + 12)
-        && alien1.x <= (spaceship.x + 72)
-        && spaceship.y <= (alien1.y + 35)
-        && alien1.y <= (spaceship.y + 90)
-    ) {
-        //Plays the capture sound
-        if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
-            capture.currentTime = 0;
-            capture.play();
-        } else {
-            capture.src = capture.src;
-            capture.play();
-        }
-        ++aliensCaptured;
-        alien1.speed = alien1.speed + 5;
-        reset();
-    }
-
-    //Detects if the alien is touching the spaceship
-    if (
-        spaceship.x <= (alien2.x + 12)
-        && alien2.x <= (spaceship.x + 72)
-        && spaceship.y <= (alien2.y + 35)
-        && alien2.y <= (spaceship.y + 90)
-    ) {
-        //Plays the capture sound
-        if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
-            capture.currentTime = 0;
-            capture.play();
-        } else {
-            capture.src = capture.src;
-            capture.play();
-        }
-        ++aliensCaptured;
-        alien2.speed = alien2.speed + 5;
-        reset2();
-    }
-
-    // Have the zombies won?
-    if (alien1.y >= canvas.height + 40 || alien2.y >= canvas.height + 40) {
-        //deduct one life
-        livesRemaining--;
-        if (livesRemaining < 1) {
-
-            keysDown = [];
-            clearInterval(gameInterval);
-            started = false;
-            var currentScore = aliensCaptured;
-            var easy = get_high_score();
-            easy.sort(function (a, b) { return b - a });
-            var medium = get_high_score_medium();
-            medium.sort(function (a, b) { return b - a });
-            var hard = get_high_score_hard();
-            hard.sort(function (a, b) { return b - a });
-            //checks if the user has scored a new high score								
-            if (currentScore > easy[0] && level == 100) {
-                alert("Well done!!!! You have a new high score for the Easy level!\nThe Aliens have invaded the Earth!\nYou Captured " + aliensCaptured + " aliens.\nPress OK to continue..");
-            } else if (currentScore > medium[0] && level == 150) {
-                alert("Well done!!!! You have a new high score for the Medium level!\nThe Aliens have invaded the Earth!\nYou Captured " + aliensCaptured + " aliens.\nPress OK to continue..");
-            } else if ((currentScore > hard[0]) && (level == 200)) {
-                alert("Well done!!!! You have a new high score for the Hard level!\nThe Aliens have invaded the Earth!\nYou Captured " + aliensCaptured + " aliens.\nPress OK to continue..");
+    //loop though each alien 
+    for (i = 0; i < numberOfAliens; i++) {
+        //Detects if the alien is touching the spaceship
+        if (
+            spaceship.x <= (aliens[i].x + 12)
+            && aliens[i].x <= (spaceship.x + 72)
+            && spaceship.y <= (aliens[i].y + 35)
+            && aliens[i].y <= (spaceship.y + 90)
+        ) {
+            //Plays the capture sound
+            if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
+                capture.currentTime = 0;
+                capture.play();
             } else {
-                alert("The Aliens have invaded the Earth!\nYou Captured " + aliensCaptured + " aliens.\nPress OK to continue..");
+                capture.src = capture.src;
+                capture.play();
             }
-            //adds the score to the local storage
-            if (level == 100) {
-                add_high_score();
-            } else if (level == 150) {
-                add_high_score_medium();
-            } else if (level == 200) {
-                add_high_score_hard();
-            }
-            //resets the game
-            reset();
-            reset2();
-            $('#level').removeAttr('disabled', 'disabled');
-            spaceship.x = canvas.width / 2 - 50;
-            spaceship.y = canvas.height - 100;
-            aliensCaptured = 0;
-            alien1.speed = parseInt($('#level').val());
-            alien2.speed = parseInt($('#level').val());
-            gameInterval = setInterval(main, 1);
-            livesRemaining = 3;
+            ++aliensCaptured;
+            aliens[i].speed = aliens[i].speed + 5;
+            resetAlienPosition(i);
         }
-        else {
-            //check if its alien 1 that touched the bottom
-            if (alien1.y >= canvas.height + 40) {
-                reset();
+    }
+
+    //loop though each alien 
+    for (i = 0; i < numberOfAliens; i++) {
+        // Have the alies won?
+        if (aliens[i].y >= canvas.height + 40) {
+            //deduct one life
+            livesRemaining--;
+            if (livesRemaining < 1) {
+
+                keysDown = [];
+                clearInterval(gameInterval);
+                started = false;
+                var currentScore = aliensCaptured;
+                var easy = get_high_score();
+                easy.sort(function (a, b) { return b - a });
+                var medium = get_high_score_medium();
+                medium.sort(function (a, b) { return b - a });
+                var hard = get_high_score_hard();
+                hard.sort(function (a, b) { return b - a });
+                //checks if the user has scored a new high score								
+                if (currentScore > easy[0] && level == 100) {
+                    alert("Well done!!!! You have a new high score for the Easy level!\nThe Aliens have invaded the Earth!\nYou Captured " + aliensCaptured + " aliens.\nPress OK to continue..");
+                } else if (currentScore > medium[0] && level == 150) {
+                    alert("Well done!!!! You have a new high score for the Medium level!\nThe Aliens have invaded the Earth!\nYou Captured " + aliensCaptured + " aliens.\nPress OK to continue..");
+                } else if ((currentScore > hard[0]) && (level == 200)) {
+                    alert("Well done!!!! You have a new high score for the Hard level!\nThe Aliens have invaded the Earth!\nYou Captured " + aliensCaptured + " aliens.\nPress OK to continue..");
+                } else {
+                    alert("The Aliens have invaded the Earth!\nYou Captured " + aliensCaptured + " aliens.\nPress OK to continue..");
+                }
+                //adds the score to the local storage
+                if (level == 100) {
+                    add_high_score();
+                } else if (level == 150) {
+                    add_high_score_medium();
+                } else if (level == 200) {
+                    add_high_score_hard();
+                }
+                //resets the game             
+                $('#level').removeAttr('disabled', 'disabled');
+                spaceship.x = canvas.width / 2 - 50;
+                spaceship.y = canvas.height - 100;
+                aliensCaptured = 0;
+
+                for (j = 0; j < numberOfAliens; j++) {
+                    aliens[j].speed = parseInt($('#level').val());
+                    aliens[j].y = -35;
+                }           
+                gameInterval = setInterval(main, 1);
+                //resets live remaining
+                livesRemaining = 3;
+                //exits loop
+                break;
             }
-            //check if its alien 2 that touched the bottom
-            if (alien2.y >= canvas.height + 40) {
-                reset2();
+            else {
+                //reset the alien position to the top of the canvas
+                resetAlienPosition(i);
             }
         }
     }
@@ -247,12 +242,10 @@ var render = function () {
         ctx.drawImage(spaceshipImage, spaceship.x, spaceship.y);
     }
 
-    if (alien1Ready) {
-        ctx.drawImage(alien1Image, alien1.x, alien1.y);
-    }
-
     if (alien2Ready) {
-        ctx.drawImage(alien2Image, alien2.x, alien2.y);
+        for (i = 0; i < numberOfAliens; i++) {
+            ctx.drawImage(alien2Image, aliens[i].x, aliens[i].y);
+        }
     }
 
     // Score
@@ -262,12 +255,11 @@ var render = function () {
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
         ctx.fillText("" + aliensCaptured, 32, 32);
-
-        ctx2.fillStyle = "#3C3";
-        ctx2.font = "14px Verdana";
-        ctx2.textAlign = "right";
-        ctx2.textBaseline = "top";
-        ctx2.fillText("Lives Remaining: " + livesRemaining, 550, 32);
+     
+        ctx.font = "14px Verdana";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "top";
+        ctx.fillText("Lives Remaining: " + livesRemaining, 550, 32);
     } else {
         ctx.fillStyle = "#3C3";
         ctx.font = "25px Verdana";
@@ -286,6 +278,6 @@ var main = function () {
     then = now;
 };
 // Starts the game
-reset();
-reset2();
+populateAliens();
+
 var then = Date.now();

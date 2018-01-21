@@ -14,6 +14,14 @@ spaceshipImage.onload = function () {
 };
 spaceshipImage.src = "images/spaceship.png";
 
+// Alien Image
+var alienReady = false;
+var alienImage = new Image();
+alienImage.onload = function () {
+    alienReady = true;
+};
+alienImage.src = "images/alien2.png";
+
 // Alien 1 image
 var alien1Ready = false;
 var alien1Image = new Image();
