@@ -3,8 +3,8 @@
 function oneTimeTasks() {
     gameInterval = setInterval(main, 1);
     started = false;
-    musicOn = true;
-    music.play();
+    //musicOn = true;
+    //music.play();
 }
 
 //Plays the game's song
@@ -29,8 +29,10 @@ var canvas_height = canvasElement.height;
 var spaceship = {
     speed: 300 // movement in pixels per second
 };
-var numberOfAliens = 3;
+
+var numberOfAliens = 2;
 var aliens = [];
+var currentAlienSpeed = 0;
 
 function populateAliens() {
     //loop though each alien and add to loop
@@ -43,29 +45,26 @@ function populateAliens() {
         };
         //add alien to array
         aliens.push(alienObject);
+        //ensures theres no overllaping
+        resetAlienPosition(i);
     }
-    console.log(aliens);
 }
 
 //assigns a level variable, value is got from the select level menu
 var level = $("#level").val();
 level = parseInt(level); // transforms the value into integer
 
-var alien1 = {
-    speed: level, // movement in pixels per second
-};
-
-var alien2 = {
-    speed: level, // movement in pixels per second
-};
-
 // changes the aliens speed according to the level
 $('#level').on('change', function (ev) {
     ev.preventDefault();
     var link = $(this);
-    alien1.speed = parseInt(this.value);
-    alien2.speed = parseInt(this.value);
+
+    for (i = 0; i < numberOfAliens; i++) {
+        aliens[i].speed = parseInt(this.value);
+    }
+
     level = parseInt(this.value);
+
     if (level == 100) {
         $('#score').html('Top 10 Scores Easy');
         show_high_score();
@@ -98,14 +97,15 @@ function start_game() {
 $('#center').on('click', 'canvas', start_game);
 
 // Handle keyboard controls
-var keysDown = {};
-
+var keysDown = {
+};
+//Key down event
 addEventListener("keydown", function (e) {
     keysDown[e.keyCode] = true;
     e.preventDefault();
     e.stopImmediatePropagation();
 }, false);
-
+//Key up event
 addEventListener("keyup", function (e) {
     delete keysDown[e.keyCode];
 }, false);
@@ -115,6 +115,22 @@ var maxSpawDistance = 500;
 var resetAlienPosition = function (i) {
     // Throw the monster somewhere on the screen randomly
     aliens[i].x = 24 + (Math.random() * (canvas.width - 48));
+    //loop though each alien 
+    for (j = 0; j < aliens.length; j++) {
+        console.log(i + ": " + aliens[i].x);
+        //ensures its not comparing agains itself
+        if (i != j) {
+            var widthDifference = aliens[i].x - aliens[j].x
+            //this means they are overlapping, so try a random number again
+            if (widthDifference < 25 && widthDifference > -25) {
+                resetAlienPosition(i);
+                //if the distance between the alien and any other alien is greater than the max spawDistance, try a random number again
+            } else if (widthDifference > maxSpawDistance || widthDifference < -maxSpawDistance) {
+                resetAlienPosition(i);
+            }
+        }
+    }
+
     aliens[i].y = -35;
 };
 
@@ -165,13 +181,11 @@ var update = function (modifier) {
                 capture.play();
             }
             ++aliensCaptured;
-            aliens[i].speed = aliens[i].speed + 5;
+            currentAlienSpeed += 2;
+            aliens[i].speed = level + currentAlienSpeed;
             resetAlienPosition(i);
         }
-    }
 
-    //loop though each alien 
-    for (i = 0; i < numberOfAliens; i++) {
         // Have the alies won?
         if (aliens[i].y >= canvas.height + 40) {
             //deduct one life
@@ -215,10 +229,12 @@ var update = function (modifier) {
                 for (j = 0; j < numberOfAliens; j++) {
                     aliens[j].speed = parseInt($('#level').val());
                     aliens[j].y = -35;
-                }           
+                }
                 gameInterval = setInterval(main, 1);
                 //resets live remaining
                 livesRemaining = 3;
+                //set incremental speed to 0
+                currentAlienSpeed = 0
                 //exits loop
                 break;
             }
@@ -242,9 +258,9 @@ var render = function () {
         ctx.drawImage(spaceshipImage, spaceship.x, spaceship.y);
     }
 
-    if (alien2Ready) {
+    if (alienReady) {
         for (i = 0; i < numberOfAliens; i++) {
-            ctx.drawImage(alien2Image, aliens[i].x, aliens[i].y);
+            ctx.drawImage(alienImage, aliens[i].x, aliens[i].y);
         }
     }
 
@@ -255,7 +271,7 @@ var render = function () {
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
         ctx.fillText("" + aliensCaptured, 32, 32);
-     
+        //Lives Remaining
         ctx.font = "14px Verdana";
         ctx.textAlign = "right";
         ctx.textBaseline = "top";
